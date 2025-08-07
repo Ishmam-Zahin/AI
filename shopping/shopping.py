@@ -15,20 +15,20 @@ def main():
 
     # Load data from spreadsheet and split into train and test sets
     evidence, labels = load_data(sys.argv[1])
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     evidence, labels, test_size=TEST_SIZE
-    # )
+    X_train, X_test, y_train, y_test = train_test_split(
+        evidence, labels, test_size=TEST_SIZE
+    )
 
     # # Train model and make predictions
-    # model = train_model(X_train, y_train)
-    # predictions = model.predict(X_test)
-    # sensitivity, specificity = evaluate(y_test, predictions)
+    model = train_model(X_train, y_train)
+    predictions = model.predict(X_test)
+    sensitivity, specificity = evaluate(y_test, predictions)
 
-    # # Print results
-    # print(f"Correct: {(y_test == predictions).sum()}")
-    # print(f"Incorrect: {(y_test != predictions).sum()}")
-    # print(f"True Positive Rate: {100 * sensitivity:.2f}%")
-    # print(f"True Negative Rate: {100 * specificity:.2f}%")
+    # Print results
+    print(f"Correct: {(y_test == predictions).sum()}")
+    print(f"Incorrect: {(y_test != predictions).sum()}")
+    print(f"True Positive Rate: {100 * sensitivity:.2f}%")
+    print(f"True Negative Rate: {100 * specificity:.2f}%")
 
 
 def load_data(filename):
@@ -60,10 +60,41 @@ def load_data(filename):
     is 1 if Revenue is true, and 0 otherwise.
     """
     # raise NotImplementedError
-    with open(filename) as csvFile:
+    evidence = []
+    labels = []
+    months = {
+        "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3,
+        "May": 4, "June": 5, "Jul": 6, "Aug": 7,
+        "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11
+    }
+    with open(filename, newline='') as csvFile:
         reader = csv.reader(csvFile)
-        for row in reader:
-            print(row)
+        rows = list(reader)
+        rows = rows[1:]  # Skip header row
+        # print(rows[:10])
+        for row in rows:
+            one_row = []
+            one_row.append(int(row[0]))  # Administrative
+            one_row.append(float(row[1]))  # Administrative_Duration
+            one_row.append(int(row[2]))  # Informational
+            one_row.append(float(row[3]))  # Informational_Duration
+            one_row.append(int(row[4]))  # ProductRelated
+            one_row.append(float(row[5]))  # ProductRelated_Duration
+            one_row.append(float(row[6]))  # BounceRates
+            one_row.append(float(row[7]))  # ExitRates
+            one_row.append(float(row[8]))  # PageValues
+            one_row.append(float(row[9]))  # SpecialDay
+            one_row.append(months[row[10]])  # Month
+            one_row.append(int(row[11]))  # OperatingSystems
+            one_row.append(int(row[12]))  # Browser
+            one_row.append(int(row[13]))  # Region
+            one_row.append(int(row[14]))  # TrafficType
+            one_row.append(1 if row[15] == "Returning_Visitor" else 0)  # VisitorType
+            one_row.append(1 if row[16] == "TRUE" else 0)  # Weekend
+            evidence.append(one_row)
+            labels.append(1 if row[17] == "TRUE" else 0)
+        
+    return (evidence, labels)
 
 
 def train_model(evidence, labels):
@@ -71,7 +102,10 @@ def train_model(evidence, labels):
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    model = KNeighborsClassifier(n_neighbors=1)
+    model.fit(evidence, labels)
+    return model
 
 
 def evaluate(labels, predictions):
@@ -89,7 +123,26 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    total_positive = 0.0
+    total_negative = 0.0
+    predicted_possitive = 0.0
+    predicted_negative = 0.0
+    for label in labels:
+        if label == 1:
+            total_positive += 1.0
+        else:
+            total_negative += 1.0
+    for index, p in enumerate(predictions):
+        if p == 1 and labels[index] == 1:
+            predicted_possitive += 1.0
+        if p == 0 and labels[index] == 0:
+            predicted_negative += 1.0
+    sensitivity = predicted_possitive / total_positive
+    specificity = predicted_negative / total_negative
+    # print(sensitivity, specificity)
+
+    return (sensitivity, specificity)
 
 
 if __name__ == "__main__":
