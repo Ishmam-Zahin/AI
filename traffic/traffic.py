@@ -3,6 +3,8 @@ import numpy as np
 import os
 import sys
 import tensorflow as tf
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.models import Sequential
 
 from sklearn.model_selection import train_test_split
 
@@ -27,6 +29,7 @@ def main():
     x_train, x_test, y_train, y_test = train_test_split(
         np.array(images), np.array(labels), test_size=TEST_SIZE
     )
+    # print(labels[0])
 
     # Get a compiled neural network
     model = get_model()
@@ -58,7 +61,20 @@ def load_data(data_dir):
     be a list of integer labels, representing the categories for each of the
     corresponding `images`.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    images = []
+    labels = []
+    for category in range(NUM_CATEGORIES):
+        category_dir = os.path.join(data_dir, str(category))
+        if not os.path.isdir(category_dir):
+            raise 'unexpected directory structure'
+        for filename in os.listdir(category_dir):
+            img = cv2.imread(os.path.join(category_dir, filename))
+            img = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
+            images.append(img)
+            labels.append(category)
+
+    return (images, labels)
 
 
 def get_model():
@@ -67,7 +83,23 @@ def get_model():
     `input_shape` of the first layer is `(IMG_WIDTH, IMG_HEIGHT, 3)`.
     The output layer should have `NUM_CATEGORIES` units, one for each category.
     """
-    raise NotImplementedError
+    # raise NotImplementedError
+    model = Sequential([
+        Conv2D(32, kernel_size = (3, 3), activation='relu', input_shape=(IMG_WIDTH, IMG_HEIGHT, 3)),
+        MaxPooling2D(pool_size=(2, 2)),
+        Conv2D(64, kernel_size=(3, 3), activation='relu'),
+        MaxPooling2D(pool_size=(2, 2)),
+        Flatten(),
+        Dense(128, activation='relu'),
+        Dense(NUM_CATEGORIES, activation='softmax')
+    ])
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
 
 
 if __name__ == "__main__":
